@@ -9,7 +9,7 @@ module.exports = function variables(string) {
     string = string.replace(/\${workspaceFolder}/g, workspace?.uri.fsPath);
     string = string.replace(/\${workspaceFolderBasename}/g, workspace?.name);
     string = string.replace(/\${file}/g, absoluteFilePath);
-    let activeWorkspace = null;
+    let activeWorkspace = workspace;
     let relativeFilePath = absoluteFilePath;
     for (let workspace of workspaces) {
         if (absoluteFilePath.replace(workspace.uri.fsPath, '') !== absoluteFilePath) {
@@ -19,7 +19,7 @@ module.exports = function variables(string) {
         }
     }
     let parsedPath = path.parse(absoluteFilePath);
-    string = string.replace(/\${fileWorkspaceFolder}/g, activeWorkspace.uri.fsPath);
+    string = string.replace(/\${fileWorkspaceFolder}/g, activeWorkspace?.uri.fsPath);
     string = string.replace(/\${relativeFile}/g, relativeFilePath);
     string = string.replace(/\${relativeFileDirname}/g, relativeFilePath.substr(0, relativeFilePath.lastIndexOf(path.sep)));
     string = string.replace(/\${fileBasename}/g, parsedPath.base);
