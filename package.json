@@ -1,6 +1,6 @@
 {
   "name": "vscode-variables",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Replace VSCode predefined variables for extensions",
   "main": "index.js",
   "peerDependencies": {
