@@ -1,7 +1,7 @@
 const vscode = require('vscode');
 const process = require('process');
 const path = require('path');
-module.exports = function variables(string) {
+module.exports = function variables(string, recursive = false) {
     let workspaces = vscode.workspace.workspaceFolders;
     let workspace = vscode.workspace.workspaceFolders.length ? vscode.workspace.workspaceFolders[0] : null;
     let activeFile = vscode.window.activeTextEditor?.document;
@@ -31,7 +31,14 @@ module.exports = function variables(string) {
     string = string.replace(/\${lineNumber}/g, vscode.window.activeTextEditor.selection.start.line + 1);
     string = string.replace(/\${selectedText}/g, vscode.window.activeTextEditor.document.getText(new vscode.Range(vscode.window.activeTextEditor.selection.start, vscode.window.activeTextEditor.selection.end)));
     string = string.replace(/\${env:(.*?)}/g, function (variable) {
-        return process.env[variable.match(/\${env:(.*?)}/)[1]];
+        return process.env[variable.match(/\${env:(.*?)}/)[1]] || '';
     });
+    string = string.replace(/\${config:(.*?)}/g, function (variable) {
+        return vscode.workspace.getConfiguration().get(variable.match(/\${config:(.*?)}/)[1], '');
+    });
+
+    if (recursive && string.match(/\${(workspaceFolder|workspaceFolderBasename|fileWorkspaceFolder|relativeFile|fileBasename|fileBasenameNoExtension|fileExtname|fileDirname|cwd|pathSeparator|lineNumber|selectedText|env:(.*?)|config:(.*?))}/)) {
+        string = variables(string, recursive);
+    }
     return string;
 }
