@@ -3,10 +3,9 @@
   "version": "0.1.3",
   "description": "Replace VSCode predefined variables for extensions",
   "main": "index.js",
-  "peerDependencies": {
-    "vscode": "^1.1.37"
+  "devDependencies": {
+    "@types/vscode": "^1.54.0"
   },
-  "devDependencies": {},
   "author": "Dominic Vonk",
   "license": "MIT",
   "repository": {
@@ -15,5 +14,6 @@
   },
   "bugs": {
     "url": "https://github.com/DominicVonk/vscode-variables/issues"
-  }
+  },
+  "dependencies": {}
 }
