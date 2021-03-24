@@ -6,7 +6,7 @@ module.exports = function variables(string, recursive = false) {
     let workspace = vscode.workspace.workspaceFolders.length ? vscode.workspace.workspaceFolders[0] : null;
     let activeFile = vscode.window.activeTextEditor?.document;
     let absoluteFilePath = activeFile?.uri.fsPath
-    string = string.replace(/\${workspaceFolder}/g, workspace?.uri.fsPath);
+    string = string.replace(/\${workspaceFolder(:.*?)?}/g, workspace?.uri.fsPath);
     string = string.replace(/\${workspaceFolderBasename}/g, workspace?.name);
     string = string.replace(/\${file}/g, absoluteFilePath);
     let activeWorkspace = workspace;
