@@ -6,6 +6,10 @@
     "build": "tsc",
     "test": "vitest run"
   },
+  "files": [
+    "package.json",
+    "dist"
+  ],
   "main": "dist/index.js",
   "devDependencies": {
     "@types/node": "^22.9.0",
