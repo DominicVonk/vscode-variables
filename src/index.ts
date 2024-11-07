@@ -1,7 +1,7 @@
 import * as os from "os";
 import * as process from "process";
 import * as vscode from "vscode";
-module.exports = function variables(string: string, recursive = false) {
+module.exports = async function variables(string: string, recursive = false) {
   const workspaceFolders = vscode.workspace.workspaceFolders;
   const activeFile = vscode.window.activeTextEditor?.document;
   const absoluteFilePath = activeFile?.uri.fsPath;
@@ -129,13 +129,29 @@ module.exports = function variables(string: string, recursive = false) {
     return vscode.workspace.getConfiguration().get(_, "");
   });
 
+  if (string.match(/\${command:(.*?)}/)) {
+    // async
+    while (string.match(/\${command:(.*?)}/)) {
+      const command = string.match(/\${command:(.*?)}/)![1];
+      try {
+        const result = await vscode.commands.executeCommand(command);
+        string = string.replace(
+          /\${command:(.*?)}/,
+          result !== undefined ? result + "" : ""
+        );
+      } catch (error) {
+        string = string.replace(/\${command:(.*?)}/, "");
+      }
+    }
+  }
+
   if (
     recursive &&
     string.match(
-      /\${(workspaceFolder|workspaceFolder:(.*?)|workspaceFolderBase:(.*?)|workspaceFolderBasename|fileWorkspaceFolder|relativeFile|fileBasename|fileBasenameNoExtension|fileExtname|fileDirname|cwd|pathSeparator|lineNumber|selectedText|env:(.*?)|config:(.*?)|userHome)}/
+      /\${(workspaceFolder|workspaceFolder:(.*?)|workspaceFolderBase:(.*?)|workspaceFolderBasename|fileWorkspaceFolder|relativeFile|fileBasename|fileBasenameNoExtension|fileExtname|fileDirname|cwd|pathSeparator|lineNumber|selectedText|env:(.*?)|config:(.*?)|command:(.*?)|userHome)}/
     )
   ) {
-    string = variables(string, recursive);
+    string = await variables(string, recursive);
   }
   return string;
 };
