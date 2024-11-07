@@ -33,6 +33,14 @@ vi.mock("vscode", () => ({
   Range: class {
     constructor() {}
   },
+  commands: {
+    executeCommand: vi.fn((command) => {
+      if (command === "testCommand") {
+        return "commandResult";
+      }
+      throw new Error("Command not found");
+    }),
+  },
 }));
 
 vi.mock("os", () => ({
@@ -48,57 +56,67 @@ vi.mock("process", () => ({
 }));
 
 describe("variables", () => {
-  test("replaces ${userHome}", () => {
-    expect(variables("${userHome}")).toBe("/home/user");
+  test("replaces ${userHome}", async () => {
+    expect(await variables("${userHome}")).toBe("/home/user");
   });
 
-  test("replaces ${workspaceFolder}", () => {
-    expect(variables("${workspaceFolder}")).toBe("/test/workspace");
+  test("replaces ${workspaceFolder}", async () => {
+    expect(await variables("${workspaceFolder}")).toBe("/test/workspace");
   });
 
-  test("replaces ${workspaceFolder:name}", () => {
-    expect(variables("${workspaceFolder:workspace2}")).toBe("/test/workspace2");
+  test("replaces ${workspaceFolder:name}", async () => {
+    expect(await variables("${workspaceFolder:workspace2}")).toBe(
+      "/test/workspace2"
+    );
   });
 
-  test("replaces ${workspaceFolderBasename}", () => {
-    expect(variables("${workspaceFolderBasename}")).toBe("workspace");
+  test("replaces ${workspaceFolderBasename}", async () => {
+    expect(await variables("${workspaceFolderBasename}")).toBe("workspace");
   });
 
-  test("replaces ${file}", () => {
-    expect(variables("${file}")).toBe("/test/workspace/file.txt");
+  test("replaces ${file}", async () => {
+    expect(await variables("${file}")).toBe("/test/workspace/file.txt");
   });
 
-  test("replaces ${fileBasename}", () => {
-    expect(variables("${fileBasename}")).toBe("file.txt");
+  test("replaces ${fileBasename}", async () => {
+    expect(await variables("${fileBasename}")).toBe("file.txt");
   });
 
-  test("replaces ${fileBasenameNoExtension}", () => {
-    expect(variables("${fileBasenameNoExtension}")).toBe("file");
+  test("replaces ${fileBasenameNoExtension}", async () => {
+    expect(await variables("${fileBasenameNoExtension}")).toBe("file");
   });
 
-  test("replaces ${fileExtname}", () => {
-    expect(variables("${fileExtname}")).toBe("txt");
+  test("replaces ${fileExtname}", async () => {
+    expect(await variables("${fileExtname}")).toBe("txt");
   });
 
-  test("replaces ${execPath}", () => {
-    expect(variables("${execPath}")).toBe("/usr/bin/code");
+  test("replaces ${execPath}", async () => {
+    expect(await variables("${execPath}")).toBe("/usr/bin/code");
   });
 
-  test("replaces ${pathSeparator}", () => {
-    expect(variables("${pathSeparator}")).toBe("/");
+  test("replaces ${pathSeparator}", async () => {
+    expect(await variables("${pathSeparator}")).toBe("/");
   });
 
-  test("replaces ${env:VAR}", () => {
-    expect(variables("${env:TEST_VAR}")).toBe("test-value");
+  test("replaces ${env:VAR}", async () => {
+    expect(await variables("${env:TEST_VAR}")).toBe("test-value");
   });
 
-  test("replaces ${config:setting}", () => {
-    expect(variables("${config:test}")).toBe("test-config");
+  test("replaces ${config:setting}", async () => {
+    expect(await variables("${config:test}")).toBe("test-config");
   });
 
-  test("handles recursive replacements", () => {
-    expect(variables("${workspaceFolder}/${fileBasename}", true)).toBe(
+  test("handles recursive replacements", async () => {
+    expect(await variables("${workspaceFolder}/${fileBasename}", true)).toBe(
       "/test/workspace/file.txt"
     );
+  });
+
+  test("replaces ${command:commandName}", async () => {
+    expect(await variables("${command:testCommand}")).toBe("commandResult");
+  });
+
+  test("handles unknown command in ${command:commandName}", async () => {
+    expect(await variables("${command:unknownCommand}")).toBe("");
   });
 });

@@ -107,6 +107,12 @@ module.exports = async function variables(string: string, recursive = false) {
     );
   });
 
+  // ${cwd} - current working directory
+  string = string.replace(
+    /\${cwd}/g,
+    absoluteFilePath?.split("/")?.slice(0, -1)?.join("/") ?? ""
+  );
+
   // ${execPath} - location of Code.exe
   string = string.replace(/\${execPath}/g, process.execPath);
 
