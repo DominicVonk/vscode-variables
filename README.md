@@ -23,6 +23,7 @@ The following predefined variables are supported:
 `${/}` - short for `${pathSeparator}`  
 `${env:<variable>}` - return the env variable  
 `${config:<variable>}` - return the settings configuration
+`${command:<command>}` - execute a command and return the result  
 
 
 ## Install the package:
