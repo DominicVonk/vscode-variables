@@ -1,0 +1,33 @@
+{
+  "name": "coc-variables",
+  "version": "0.0.1",
+  "description": "Replace Coc.nvim predefined variables for extensions",
+  "scripts": {
+    "patch": "scripts/patch.sh ../src/*.ts",
+    "prepack": "npm run patch && npm run build",
+    "build": "tsc",
+    "test": "vitest run"
+  },
+  "files": [
+    "package.json",
+    "README.md",
+    "LICENSE.md",
+    "dist"
+  ],
+  "main": "dist/index.js",
+  "devDependencies": {
+    "@types/node": "^22.9.0",
+    "coc.nvim": "^0.0.83-next.18",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.4"
+  },
+  "author": "Dominic Vonk",
+  "license": "MIT",
+  "repository": {
+    "url": "https://github.com/DominicVonk/vscode-variables.git",
+    "type": "git"
+  },
+  "bugs": {
+    "url": "https://github.com/DominicVonk/vscode-variables/issues"
+  }
+}

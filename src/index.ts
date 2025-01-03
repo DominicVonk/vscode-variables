@@ -1,28 +1,59 @@
 import * as os from "os";
 import * as process from "process";
+//# #if HAVE_VSCODE
 import * as vscode from "vscode";
+//# #elif HAVE_COC_NVIM
+//# import * as vscode from "coc.nvim";
+//# #endif
 module.exports = async function variables(string: string, recursive = false) {
   const workspaceFolders = vscode.workspace.workspaceFolders;
   const activeFile = vscode.window.activeTextEditor?.document;
+  //# #if HAVE_VSCODE
   const absoluteFilePath = activeFile?.uri.fsPath;
+  //# #elif HAVE_COC_NVIM
+  //# const absoluteFilePath = activeFile?.uri
+  //#   ? vscode.Uri.parse(activeFile.uri).fsPath
+  //#   : null;
+  //# #endif
   const workspace = vscode.workspace.workspaceFolders?.[0];
+  //# #if HAVE_VSCODE
   const activeWorkspace = workspaceFolders?.find((workspace) =>
     absoluteFilePath?.startsWith(workspace.uri.fsPath)
   )?.uri.fsPath;
+  //# #elif HAVE_COC_NVIM
+  //# const uri = workspaceFolders?.find((workspace) =>
+  //#   absoluteFilePath?.startsWith(vscode.Uri.parse(workspace.uri).fsPath)
+  //# )?.uri;
+  //# const activeWorkspace = uri ? vscode.Uri.parse(uri).fsPath : null;
+  //# #endif
   const homeDir = os.homedir();
 
   // ${userHome} - /home/your-username
   string = string.replace(/\${userHome}/g, homeDir);
 
   // ${workspaceFolder} - /home/your-username/your-project
-  string = string.replace(/\${workspaceFolder}/g, workspace?.uri.fsPath ?? "");
+  string = string.replace(
+    /\${workspaceFolder}/g,
+    //# #if HAVE_VSCODE
+    workspace?.uri.fsPath
+    //# #elif HAVE_COC_NVIM
+    //# vscode.Uri.parse(workspace?.uri).fsPath ?? ""
+    //# #endif
+  );
 
   // ${workspaceFolder:name} - /home/your-username/your-project2
   string = string.replace(/\${workspaceFolder:(.*?)}/g, function (_, name) {
+    //# #if HAVE_VSCODE
     return (
       workspaceFolders?.find((workspace) => workspace.name === name)?.uri
         .fsPath ?? ""
     );
+    //# #elif HAVE_COC_NVIM
+    //# const uri = workspaceFolders?.find(
+    //#   (workspace) => workspace.name === name
+    //# )?.uri;
+    //# return uri ? vscode.Uri.parse(uri).fsPath : "";
+    //# #endif
   });
 
   // ${workspaceFolderBasename} - your-project
@@ -90,7 +121,11 @@ module.exports = async function variables(string: string, recursive = false) {
   string = string.replace(
     /\${lineNumber}/g,
     (vscode.window.activeTextEditor
+      //# #if HAVE_VSCODE
       ? vscode.window.activeTextEditor.selection.start.line + 1
+      //# #elif HAVE_COC_NVIM
+      //# ? vscode.window.activeTextEditor.visibleRanges[0].start.line + 1
+      //# #endif
       : 0
     ).toString()
   );
@@ -98,12 +133,20 @@ module.exports = async function variables(string: string, recursive = false) {
   // ${selectedText} - text selected in your code editor
   string = string.replace(/\${selectedText}/g, function () {
     return (
-      vscode.window.activeTextEditor?.document.getText(
-        new vscode.Range(
-          vscode.window.activeTextEditor.selection.start,
-          vscode.window.activeTextEditor.selection.end
+      vscode.window.activeTextEditor?.document
+        //# #if HAVE_VSCODE
+        .getText(
+          new vscode.Range(
+            vscode.window.activeTextEditor.selection.start,
+            vscode.window.activeTextEditor.selection.end
+          )
         )
-      ) ?? ""
+        //# #elif HAVE_COC_NVIM
+        //# .getLines(
+        //#   vscode.window.activeTextEditor.visibleRanges[0].start.line,
+        //#   vscode.window.activeTextEditor.visibleRanges[0].end.line
+        //# ).join("\n") ?? ""
+        //# #endif
     );
   });
 
