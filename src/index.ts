@@ -1,7 +1,8 @@
 import * as os from "os";
 import * as process from "process";
 import * as vscode from "vscode";
-module.exports = async function variables(string: string, recursive = false) {
+
+export default async function variables(string: string, recursive = false) {
   const workspaceFolders = vscode.workspace.workspaceFolders;
   const activeFile = vscode.window.activeTextEditor?.document;
   const absoluteFilePath = activeFile?.uri.fsPath;
@@ -160,4 +161,4 @@ module.exports = async function variables(string: string, recursive = false) {
     string = await variables(string, recursive);
   }
   return string;
-};
+}
