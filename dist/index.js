@@ -1,9 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = variables;
 const os = require("os");
 const process = require("process");
 const vscode = require("vscode");
-module.exports = function variables(string, recursive = false) {
+async function variables(string, recursive = false) {
     const workspaceFolders = vscode.workspace.workspaceFolders;
     const activeFile = vscode.window.activeTextEditor?.document;
     const absoluteFilePath = activeFile?.uri.fsPath;
@@ -50,6 +51,8 @@ module.exports = function variables(string, recursive = false) {
     string = string.replace(/\${selectedText}/g, function () {
         return (vscode.window.activeTextEditor?.document.getText(new vscode.Range(vscode.window.activeTextEditor.selection.start, vscode.window.activeTextEditor.selection.end)) ?? "");
     });
+    // ${cwd} - current working directory
+    string = string.replace(/\${cwd}/g, absoluteFilePath?.split("/")?.slice(0, -1)?.join("/") ?? "");
     // ${execPath} - location of Code.exe
     string = string.replace(/\${execPath}/g, process.execPath);
     // ${pathSeparator} - / on macOS or linux, \ on Windows
@@ -64,9 +67,23 @@ module.exports = function variables(string, recursive = false) {
     string = string.replace(/\${config:(.*?)}/g, function (variable, _) {
         return vscode.workspace.getConfiguration().get(_, "");
     });
+    if (string.match(/\${command:(.*?)}/)) {
+        // async
+        while (string.match(/\${command:(.*?)}/)) {
+            const command = string.match(/\${command:(.*?)}/)[1];
+            try {
+                const result = await vscode.commands.executeCommand(command);
+                string = string.replace(/\${command:(.*?)}/, result !== undefined ? result + "" : "");
+            }
+            catch (error) {
+                string = string.replace(/\${command:(.*?)}/, "");
+            }
+        }
+    }
     if (recursive &&
-        string.match(/\${(workspaceFolder|workspaceFolder:(.*?)|workspaceFolderBase:(.*?)|workspaceFolderBasename|fileWorkspaceFolder|relativeFile|fileBasename|fileBasenameNoExtension|fileExtname|fileDirname|cwd|pathSeparator|lineNumber|selectedText|env:(.*?)|config:(.*?)|userHome)}/)) {
-        string = variables(string, recursive);
+        string.match(/\${(workspaceFolder|workspaceFolder:(.*?)|workspaceFolderBase:(.*?)|workspaceFolderBasename|fileWorkspaceFolder|relativeFile|fileBasename|fileBasenameNoExtension|fileExtname|fileDirname|cwd|pathSeparator|lineNumber|selectedText|env:(.*?)|config:(.*?)|command:(.*?)|userHome)}/)) {
+        string = await variables(string, recursive);
     }
     return string;
-};
+}
+// export = variables;
