@@ -16,6 +16,7 @@ jobs:
       - run: npm test
       - run: npm run test:types
       - run: npm run test:package
+      - run: npm run test:neovim
 
   publish-npm:
     needs: build

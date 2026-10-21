@@ -1,4 +1,4 @@
-import { expect, test, vi } from "vitest";
+import { afterEach, expect, test, vi } from "vitest";
 import variables from "./coc";
 import { window, workspace } from "coc.nvim";
 
@@ -7,7 +7,7 @@ vi.mock("coc.nvim", () => ({
   workspace: {
     workspaceFolders: [{ name: "repo", uri: "file:///test/my%20repo" }],
     getConfiguration: () => ({ get: () => "setting" }),
-    nvim: { call: vi.fn(async () => "v") },
+    nvim: { call: vi.fn(async () => "v"), eval: vi.fn(async () => ["selected"]) },
   },
   window: {
     activeTextEditor: { document: {
@@ -19,6 +19,8 @@ vi.mock("coc.nvim", () => ({
   },
   commands: { executeCommand: async () => "command" },
 }));
+
+afterEach(() => vi.restoreAllMocks());
 
 test("coc adapter resolves URIs, cursor position, selections, settings and commands", async () => {
   expect(await variables("${workspaceFolder}|${relativeFile}|${lineNumber}:${columnNumber}|${selectedText}|${config:x}|${command:x}"))
@@ -33,4 +35,18 @@ test("normal mode has no selected text", async () => {
 test("missing editor resolves file and cursor variables safely", async () => {
   vi.spyOn(window, "activeTextEditor", "get").mockReturnValueOnce(undefined);
   expect(await variables("${file}|${lineNumber}|${columnNumber}|${selectedText}")) .toBe("|0|0|");
+});
+
+test("uses the live visual region rather than stale selection marks", async () => {
+  vi.mocked(workspace.nvim.call).mockResolvedValueOnce("V");
+  vi.mocked(workspace.nvim.eval).mockResolvedValueOnce(["first", "second"]);
+  expect(await variables("${selectedText}")).toBe("first\nsecond\n");
+  expect(workspace.nvim.eval).toHaveBeenCalledWith(
+    "getregion(getpos('v'), getpos('.'), {'type': mode()})"
+  );
+});
+
+test("rejects invalid editor selection results", async () => {
+  vi.mocked(workspace.nvim.eval).mockResolvedValueOnce(null);
+  await expect(variables("${selectedText}")).rejects.toThrow("invalid visual selection");
 });

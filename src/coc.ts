@@ -16,8 +16,15 @@ async function variables(input: string, recursive = false): Promise<string> {
       if (!editor) return "";
       const mode = await workspace.nvim.call("mode");
       if (mode !== "v" && mode !== "V" && mode !== "\u0016") return "";
-      const range = await window.getSelectedRange(mode);
-      return range ? editor.document.textDocument.getText(range) : "";
+      // coc's getSelectedRange reads the previous selection marks, not the
+      // current visual anchor. getregion also handles block and Unicode text.
+      const lines: unknown = await workspace.nvim.eval(
+        "getregion(getpos('v'), getpos('.'), {'type': mode()})"
+      );
+      if (!Array.isArray(lines) || !lines.every((line: unknown) => typeof line === "string")) {
+        throw new Error("Editor returned an invalid visual selection");
+      }
+      return lines.join("\n") + (mode === "V" ? "\n" : "");
     },
     configuration: (name) => workspace.getConfiguration().get(name, ""),
     executeCommand: (name) => commands.executeCommand(name),

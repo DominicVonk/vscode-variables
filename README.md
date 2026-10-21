@@ -40,7 +40,8 @@ import variables = require('vscode-variables/coc');
 ```
 
 This is a library for extension authors, not a standalone `CocInstall` extension.
-The coc entry point uses coc.nvim's document URIs, actual cursor position and
+Visual selection support requires an editor with `getregion()` (Neovim 0.10+
+or Vim 9.1+). The coc entry point uses coc.nvim's document URIs, actual cursor position and
 visual selection range. It does not load VS Code. The main entry point does not
 load coc.nvim. Each editor supplies its own API at runtime.
 
@@ -103,7 +104,15 @@ npm ci
 npm test
 npm run test:types
 npm audit
+npm run test:neovim
 ```
 
 `npm pack` and `npm publish` build declarations and JavaScript from source through
 `prepack`, keeping the published package up to date.
+
+The Neovim integration check needs Docker, Git, curl and an x86_64 host. It
+installs the npm tarball into a test coc extension and runs pinned Neovim/coc.nvim
+builds with Node 22 in a temporary container. The editor has no network access or
+host configuration, and runs as the invoking user. It covers cursor coordinates,
+workspace paths, configuration, commands, recursive expansion, and character,
+line, block, reversed and Unicode visual selections.
