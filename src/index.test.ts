@@ -1,8 +1,9 @@
 import { describe, expect, test, vi } from "vitest";
-// @ts-expect-error
 import variables from "./index";
 
 vi.mock("vscode", () => ({
+  TaskGroup: { Build: { id: "build" } },
+  tasks: { fetchTasks: async () => [{ name: "build app", group: { id: "build", isDefault: true } }] },
   workspace: {
     workspaceFolders: [
       {
@@ -25,7 +26,7 @@ vi.mock("vscode", () => ({
         getText: () => "selected text",
       },
       selection: {
-        start: { line: 0 },
+        start: { line: 0, character: 2 },
         end: { line: 0 },
       },
     },
@@ -50,6 +51,7 @@ vi.mock("os", () => ({
 
 vi.mock("process", () => ({
   execPath: "/usr/bin/code",
+  cwd: () => "/extension-host",
   env: {
     TEST_VAR: "test-value",
   },
@@ -87,7 +89,7 @@ describe("variables", () => {
   });
 
   test("replaces ${fileExtname}", async () => {
-    expect(await variables("${fileExtname}")).toBe("txt");
+    expect(await variables("${fileExtname}")).toBe(".txt");
   });
 
   test("replaces ${execPath}", async () => {
@@ -119,4 +121,9 @@ describe("variables", () => {
   test("handles unknown command in ${command:commandName}", async () => {
     expect(await variables("${command:unknownCommand}")).toBe("");
   });
+});
+
+test("resolves new variables and extension-host cwd", async () => {
+  expect(await variables("${columnNumber}|${fileDirnameBasename}|${defaultBuildTask}|${cwd}"))
+    .toBe("3|workspace|build app|/extension-host");
 });

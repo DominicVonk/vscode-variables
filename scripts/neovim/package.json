@@ -1,0 +1,1 @@
+{"name":"coc-variables-sandbox-test","version":"1.0.0","main":"index.js","engines":{"coc":">=0.0.82"},"activationEvents":["*"],"contributes":{"commands":[{"command":"sandbox.test","title":"Run sandbox tests"}]}}

@@ -1,45 +1,118 @@
 # VSCode Predefined Variable Parser
 
-Predefined variables
-The following predefined variables are supported:
+Replace editor variables in strings from VS Code extensions or coc.nvim extensions.
 
-`${homeDir}` - the home directory of the user  
-`${workspaceFolder}` - the path of the folder opened in VS Code  
-`${workspaceFolder:name}` - the path of the folder opened in VS Code with the name  
-`${workspaceFolderBasename}` - the name of the folder opened in VS Code without any slashes (/)  
-`${workspaceFolderBasename:name}` - the name of the folder opened in VS Code without any slashes (/) with the name  
-`${file}` - the current opened file  
-`${fileWorkspaceFolder}` - the current opened file's workspace folder  
-`${relativeFile}` - the current opened file relative to workspaceFolder  
-`${relativeFileDirname}` - the current opened file's dirname relative to workspaceFolder  
-`${fileBasename}` - the current opened file's   
-`${fileBasenameNoExtension}` - the current opened file's basename with no file extension  
-`${fileDirname}` - the current opened file's dirname  
-`${fileExtname}` - the current opened file's extension  
-`${cwd}` - the task runner's current working directory on startup  
-`${lineNumber}` - the current selected line number in the active file  
-`${selectedText}` - the current selected text in the active file  
-`${pathSeparator}` - the character used by the operating system to separate components in file paths  
-`${/}` - short for `${pathSeparator}`  
-`${env:<variable>}` - return the env variable  
-`${config:<variable>}` - return the settings configuration  
-`${command:<command>}` - execute a command and return the result  
-
-
-## Install the package:
-```npm i -S vscode-variables```
-
-## Using the package
-### Once
-```js
-const vscodeVariables = require('vscode-variables');
-
-vscodeVariables('${file}'); //will return the fsPath of the file.
+```sh
+npm install vscode-variables
 ```
-### Recursive
+
+## Usage
+
+The parser returns a `Promise<string>`. Call it inside an async function:
 
 ```js
-const vscodeVariables = require('vscode-variables');
-
-vscodeVariables('${file}',true); //will return the fsPath of the file.
+const variables = require('vscode-variables');
+const file = await variables('${file}');
+const nested = await variables('${config:myExtension.path}', true);
 ```
+
+TypeScript declarations are included:
+
+```ts
+import variables = require('vscode-variables');
+const file: string = await variables('${file}');
+```
+
+Default imports also work with `esModuleInterop` enabled. The existing callable
+CommonJS export is preserved.
+
+### coc.nvim (Vim / Neovim)
+
+Inside a coc.nvim extension, use the dedicated entry point:
+
+```js
+const variables = require('vscode-variables/coc');
+const file = await variables('${file}');
+```
+
+```ts
+import variables = require('vscode-variables/coc');
+```
+
+This is a library for extension authors, not a standalone `CocInstall` extension.
+Visual selection support requires an editor with `getregion()` (Neovim 0.10+
+or Vim 9.1+). The coc entry point uses coc.nvim's document URIs, actual cursor position and
+visual selection range. It does not load VS Code. The main entry point does not
+load coc.nvim. Each editor supplies its own API at runtime.
+
+## Variables
+
+Checked against the [VS Code variables reference](https://code.visualstudio.com/docs/reference/variables-reference)
+on 21 October 2026.
+
+| Variable | Value |
+|---|---|
+| `${userHome}` | User's home directory |
+| `${workspaceFolder}` | First workspace folder's path |
+| `${workspaceFolder:name}` | Named workspace folder's path |
+| `${workspaceFolderBasename}` | First workspace folder's name |
+| `${workspaceFolderBasename:name}` | Named workspace folder's name |
+| `${file}` | Active file's path |
+| `${fileWorkspaceFolder}` | Active file's containing workspace path (deepest matching folder) |
+| `${relativeFile}` | File path relative to its containing workspace |
+| `${relativeFileDirname}` | Relative file's directory (`.` for a workspace-root file) |
+| `${fileBasename}` | Filename including extension |
+| `${fileBasenameNoExtension}` | Filename without its last extension |
+| `${fileExtname}` | Last extension including its leading dot; empty for extensionless files |
+| `${fileDirname}` | Active file's directory path |
+| `${fileDirnameBasename}` | Active file's directory name |
+| `${cwd}` | Extension-host process's current working directory |
+| `${lineNumber}` | Cursor's one-based line number; `0` without an editor |
+| `${columnNumber}` | Cursor's one-based column number; `0` without an editor |
+| `${selectedText}` | Selected text; in coc.nvim, current visual selection or empty outside visual mode |
+| `${execPath}` | Running editor host's executable path |
+| `${defaultBuildTask}` | VS Code's default build task name; empty if none exists |
+| `${pathSeparator}` or `${/}` | Operating system's path separator |
+| `${env:VARIABLE}` | Environment variable, or empty if unset |
+| `${config:setting}` | Editor configuration value, or empty if unset |
+| `${command:commandID}` | Command result; undefined or failed commands become empty strings |
+
+`${defaultBuildTask}` remains unchanged in coc.nvim, which has no VS Code task API.
+`${input:id}` and setting-specific variables such as `${dirty}` are not supported;
+unknown variables remain unchanged. This library has no enclosing `tasks.json` or
+`launch.json` context: workspace selection uses the first folder, `${cwd}` uses
+the host process, and commands receive no launch configuration argument.
+
+By default, one substitution pass runs. Passing `true` repeats substitution until
+stable, rejecting cycles and expansion beyond 100 passes. A repeated command is
+executed once per pass. Unlike VS Code task/debug substitution, recursive expansion
+is supported and command results are converted to strings for compatibility.
+
+### Behavior corrections
+
+`${userHome}` is the supported name (the previous README incorrectly said
+`${homeDir}`). `${fileExtname}` now includes the leading dot, relative file paths
+no longer start with a separator, multi-dot filename stems are preserved, Windows
+paths use native path rules, and `${cwd}` no longer returns the active file's directory.
+
+## Development
+
+Use Node.js 22.12 or newer and npm:
+
+```sh
+npm ci
+npm test
+npm run test:types
+npm audit
+npm run test:neovim
+```
+
+`npm pack` and `npm publish` build declarations and JavaScript from source through
+`prepack`, keeping the published package up to date.
+
+The Neovim integration check needs Docker, Git, curl and an x86_64 host. It
+installs the npm tarball into a test coc extension and runs pinned Neovim/coc.nvim
+builds with Node 22 in a temporary container. The editor has no network access or
+host configuration, and runs as the invoking user. It covers cursor coordinates,
+workspace paths, configuration, commands, recursive expansion, and character,
+line, block, reversed and Unicode visual selections.

@@ -4,7 +4,11 @@
   "description": "Replace VSCode predefined variables for extensions",
   "scripts": {
     "build": "tsc",
-    "test": "vitest run"
+    "test": "vitest run",
+    "prepack": "npm run build",
+    "test:types": "npm run build && tsc --noEmit --strict --esModuleInterop --module Node16 --moduleResolution Node16 tests/types.cts tests/types.mts",
+    "test:package": "node scripts/test-package.cjs",
+    "test:neovim": "bash scripts/test-neovim.sh"
   },
   "files": [
     "package.json",
@@ -17,8 +21,9 @@
   "devDependencies": {
     "@types/node": "^22.9.0",
     "@types/vscode": "^1.95.0",
+    "coc.nvim": "^0.0.83-next.27",
     "typescript": "^5.6.3",
-    "vitest": "^2.1.4"
+    "vitest": "^4.1.12"
   },
   "author": "Dominic Vonk",
   "license": "MIT",
@@ -28,5 +33,24 @@
   },
   "bugs": {
     "url": "https://github.com/DominicVonk/vscode-variables/issues"
+  },
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./coc": {
+      "types": "./dist/coc.d.ts",
+      "default": "./dist/coc.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "typesVersions": {
+    "*": {
+      "coc": [
+        "dist/coc.d.ts"
+      ]
+    }
   }
 }
